@@ -1,0 +1,12 @@
+{
+  "name": "@caas/migrations",
+  "private": true,
+  "scripts": {
+    "migrate:up": "node-pg-migrate up -m ./migrations -c ./migration.config.cjs",
+    "migrate:down": "node-pg-migrate down -m ./migrations -c ./migration.config.cjs"
+  },
+  "dependencies": {
+    "node-pg-migrate": "^7.9.1",
+    "pg": "^8.16.3"
+  }
+}

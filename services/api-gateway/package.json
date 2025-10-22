@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "start": "node dist/main.js"
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
-    "fastify": "^4.27.0"
+    "fastify": "^4.27.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/pg": "^8.15.5",
     "tsx": "^4.16.0",
     "typescript": "^5.6.3"
   }

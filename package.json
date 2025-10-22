@@ -1,0 +1,17 @@
+{
+  "name": "caas",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "scripts": {
+    "db:up": "docker compose -f infra/docker-compose.yml run --rm migrator",
+    "dev": "docker compose -f infra/docker-compose.yml up -d",
+    "down": "docker compose -f infra/docker-compose.yml down",
+    "logs": "docker compose -f infra/docker-compose.yml logs -f --tail=200",
+    "ps": "docker compose -f infra/docker-compose.yml ps",
+    "rebuild": "docker compose -f infra/docker-compose.yml build --no-cache",
+    "api:rebuild": "docker compose -f infra/docker-compose.yml build --no-cache api-gateway && docker compose -f infra/docker-compose.yml up -d api-gateway",
+    "typecheck": "pnpm -r --filter './services/**' run typecheck"
+  },
+  "devDependencies": {
+  }
+}
