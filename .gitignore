@@ -1,1 +1,24 @@
+# Node / PNPM
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+*.log
+
+# Build outputs
+dist/
+.cache/
+.temp/
+
+# Env & config
 .env
+.env.*
+.DS_Store
+
+# Docker build contexts
+**/Dockerfile
+**/.dockerignore
+
+# Migrations cache
+scripts/migrations/node_modules/
+scripts/migrations/pnpm-lock.yaml
+scripts/migrations/.pnpm-store/
