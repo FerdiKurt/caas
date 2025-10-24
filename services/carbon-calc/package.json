@@ -1,0 +1,21 @@
+{
+    "name": "@caas/carbon-calc",
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "tsx watch src/index.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "kafkajs": "^2.2.4",
+        "pg": "^8.16.3"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.30",
+        "@types/pg": "^8.10.2",
+        "tsx": "^4.16.0",
+        "typescript": "^5.6.3"
+    }
+}
