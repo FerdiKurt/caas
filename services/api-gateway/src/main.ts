@@ -10,12 +10,29 @@ const pool = new pg.Pool({
   database: process.env.PGDATABASE || "caas",
 });
 
-app.get("/protocols", async () => {
-  const { rows } = await pool.query("SELECT id, name, slug, tier, created_at FROM protocols ORDER BY created_at DESC");
-  return rows;
+// Health
+app.get("/health", async () => ({ status: "ok" }));
+
+// 🔎 Join endpoint: tx → emission → offset (latest record for a tx hash)
+app.get("/tx/:hash", async (req, reply) => {
+  const { hash } = req.params as { hash: string };
+  const { rows } = await pool.query(
+    `SELECT
+       t.chain_id, t.tx_hash, t.block_number, t.observed_at,
+       e.kg_co2e, e.calc_version,
+       o.target_kg_co2e, o.purchased_kg_co2e, o.status AS order_status
+     FROM tx_events t
+     LEFT JOIN emissions e ON e.tx_event_id = t.id
+     LEFT JOIN offset_orders o ON o.tx_event_id = t.id
+     WHERE t.tx_hash = $1
+     ORDER BY t.observed_at DESC
+     LIMIT 1`,
+    [hash]
+  );
+  if (!rows.length) return reply.code(404).send({ error: "not_found" });
+  return rows[0];
 });
 
-app.get("/health", async () => ({ status: "ok" }));
 
 app.listen({ port: 8080, host: "0.0.0.0" })
   .then(() => console.log("✅ API Gateway running on http://localhost:8080"));
