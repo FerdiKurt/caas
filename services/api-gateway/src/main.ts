@@ -34,5 +34,28 @@ app.get("/tx/:hash", async (req, reply) => {
 });
 
 
+// (Optional) simple protocol summary for quick checks
+app.get("/protocols/:slug/summary", async (req, reply) => {
+  const { slug } = req.params as { slug: string };
+  const { rows } = await pool.query(
+    `
+    SELECT
+      p.slug,
+      COUNT(DISTINCT t.id)                         AS tx_count,
+      COALESCE(SUM(e.kg_co2e), 0)                  AS total_emissions_kg,
+      COALESCE(SUM(o.purchased_kg_co2e), 0)        AS total_offset_kg
+    FROM protocols p
+    LEFT JOIN tx_events t   ON t.protocol_id = p.id
+    LEFT JOIN emissions e   ON e.tx_event_id = t.id
+    LEFT JOIN offset_orders o ON o.tx_event_id = t.id
+    WHERE p.slug = $1
+    GROUP BY p.slug
+    `,
+    [slug]
+  );
+  if (!rows.length) return reply.code(404).send({ error: "not_found" });
+  return rows[0];
+});
+
 app.listen({ port: 8080, host: "0.0.0.0" })
   .then(() => console.log("✅ API Gateway running on http://localhost:8080"));
