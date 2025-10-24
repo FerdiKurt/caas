@@ -9,8 +9,21 @@ services:
 
   redpanda:
     image: redpandadata/redpanda:latest
-    command: ["redpanda","start","--overprovisioned","--smp","1","--memory","1G","--reserve-memory","0M","--check=false"]
-    ports: ["9092:9092","9644:9644"]
+    command:
+      - redpanda start
+      - --overprovisioned
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --check=false
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:9092,PLAINTEXT_HOST://localhost:29092
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+    ports:
+      - "9092:29092"   # host access via 29092 mapping
+      - "9644:9644"    # admin HTTP
+    restart: unless-stopped
 
   api-gateway:
     build:
@@ -20,7 +33,39 @@ services:
       - ../.env                          # 👈 ../ points at repo root .env
     ports: ["8080:8080"]
     depends_on: [postgres]
-    
+
+  offset-orchestrator:
+    build:
+      context: ../services/offset-orchestrator
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      - redpanda
+      - postgres
+
+  event-ingestor:
+    build:
+      context: ../services/event-ingestor
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      - redpanda
+      - postgres
+    restart: unless-stopped
+
+  carbon-calc:
+    build:
+      context: ../services/carbon-calc
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env
+    depends_on:
+      - redpanda
+      - postgres
+    restart: unless-stopped
+
   migrator:
     image: node:20-alpine
     working_dir: /app
