@@ -34,37 +34,38 @@ services:
     ports: ["8080:8080"]
     depends_on: [postgres]
 
-  offset-orchestrator:
-    build:
-      context: ../services/offset-orchestrator
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env
-    depends_on:
-      - redpanda
-      - postgres
-
   event-ingestor:
     build:
-      context: ../services/event-ingestor
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env
-    depends_on:
-      - redpanda
-      - postgres
-    restart: unless-stopped
+      context: ..                       # ← repo root
+      dockerfile: services/event-ingestor/Dockerfile
+    env_file: [../.env]
+    environment:
+      - SERVICE_NAME=event-ingestor
+      - METRICS_PORT=9101
+    ports: ["9101:9101"]
+    depends_on: [postgres, redpanda]
 
   carbon-calc:
     build:
-      context: ../services/carbon-calc
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env
-    depends_on:
-      - redpanda
-      - postgres
-    restart: unless-stopped
+      context: ..
+      dockerfile: services/carbon-calc/Dockerfile
+    env_file: [../.env]
+    environment:
+      - SERVICE_NAME=carbon-calc
+      - METRICS_PORT=9102
+    ports: ["9102:9102"]
+    depends_on: [postgres, redpanda]
+
+  offset-orchestrator:
+    build:
+      context: ..
+      dockerfile: services/offset-orchestrator/Dockerfile
+    env_file: [../.env]
+    environment:
+      - SERVICE_NAME=offset-orchestrator
+      - METRICS_PORT=9103
+    ports: ["9103:9103"]
+    depends_on: [postgres, redpanda]
 
   migrator:
     image: node:20-alpine
