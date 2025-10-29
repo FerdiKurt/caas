@@ -12,6 +12,18 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 120);
 
+// ----- Metrics (in-memory, reset on restart) -----
+type C = Record<string, number>;
+const metrics = {
+  startedAt: new Date().toISOString(),
+  requests_total: {} as C,          // by route
+  errors_total: {} as C,            // by route (status >= 400)
+  latency_ms_sum: {} as C,          // by route
+  latency_ms_count: {} as C,        // by route
+};
+const inc = (m: C, k: string, n = 1) => (m[k] = (m[k] || 0) + n);
+
+// ----- DB -----
 const pool = new Pool({
   host: process.env.PGHOST || "postgres",
   port: +(process.env.PGPORT || 5432),
@@ -30,37 +42,64 @@ await app.register(cors, {
   credentials: false,
 });
 
-// Use default hook (onRequest). Skip /health via allowList.
+// Rate limit (skip /health and /metrics)
 await app.register(rateLimit, {
   global: true,
   max: RATE_LIMIT_MAX,
-  // both number (ms) and string are accepted; number keeps it simple
   timeWindow: RATE_LIMIT_WINDOW_MS,
-  keyGenerator: (req) =>
-    (req.headers["x-forwarded-for"] as string) || req.ip,
-  allowList: (req) => req.url === "/health",
+  keyGenerator: (req) => (req.headers["x-forwarded-for"] as string) || req.ip,
+  allowList: (req) => req.url === "/health" || req.url === "/metrics",
 });
 
-// ----- Public route -----
+// ----- Public routes -----
 app.get("/health", async () => ({ status: "ok" }));
 
-// ----- Auth guard (everything except /health) -----
-app.addHook("onRequest", async (req, reply) => {
-  if (req.url === "/health") return; // public
+// Metrics (no auth) — JSON summary
+app.get("/metrics", async () => {
+  const avg = (route: string) =>
+    (metrics.latency_ms_count[route] || 0) === 0
+      ? 0
+      : (metrics.latency_ms_sum[route] || 0) / metrics.latency_ms_count[route];
+  const routes = Array.from(
+    new Set([
+      ...Object.keys(metrics.requests_total),
+      ...Object.keys(metrics.errors_total),
+      ...Object.keys(metrics.latency_ms_count),
+    ]),
+  );
+  const perRoute = routes.map((r) => ({
+    route: r,
+    requests: metrics.requests_total[r] || 0,
+    errors: metrics.errors_total[r] || 0,
+    avg_latency_ms: Math.round(avg(r)),
+  }));
+  return {
+    service: "api-gateway",
+    startedAt: metrics.startedAt,
+    routes: perRoute,
+  };
+});
 
-  if (!API_KEY) {
-    reply.code(500).send({ error: "server_misconfig", message: "API_KEY not set" });
-    return;
-  }
+// ----- Auth guard (everything except /health, /metrics) -----
+app.addHook("onRequest", async (req, reply) => {
+  if (req.url === "/health" || req.url === "/metrics") return;
+  if (!API_KEY) return reply.code(500).send({ error: "server_misconfig" });
   const header = (req.headers["x-api-key"] || "") as string;
-  if (!header) {
-    reply.code(401).send({ error: "unauthorized" });
-    return;
-  }
-  if (header !== API_KEY) {
-    reply.code(403).send({ error: "forbidden" });
-    return;
-  }
+  if (!header) return reply.code(401).send({ error: "unauthorized" });
+  if (header !== API_KEY) return reply.code(403).send({ error: "forbidden" });
+});
+
+// ----- Metrics hooks (count + latency) -----
+app.addHook("onRequest", async (req) => {
+  (req as any)._t0 = Date.now();
+});
+app.addHook("onResponse", async (req, reply) => {
+  const route = (req.routerPath || req.url || "unknown").toString();
+  inc(metrics.requests_total, route, 1);
+  const ms = Date.now() - ((req as any)._t0 || Date.now());
+  inc(metrics.latency_ms_sum, route, ms);
+  inc(metrics.latency_ms_count, route, 1);
+  if (reply.statusCode >= 400) inc(metrics.errors_total, route, 1);
 });
 
 // ----- Routes -----
@@ -114,6 +153,5 @@ app.get("/protocols/:slug/summary", async (req, reply) => {
 });
 
 // ----- Start -----
-app
-  .listen({ port: 8080, host: "0.0.0.0" })
+app.listen({ port: 8080, host: "0.0.0.0" })
   .then(() => console.log("✅ API Gateway running on http://localhost:8080"));
