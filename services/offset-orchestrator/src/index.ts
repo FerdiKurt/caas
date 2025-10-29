@@ -3,7 +3,7 @@ import { Kafka } from "kafkajs";
 import pg from "pg";
 import { startMetricsServer, inc, metrics } from "@caas/shared-metrics/dist/index.js";
 
-import "./vendor.mock.ts";
+import "./vendor.mock.js";
 
 const { Pool } = pg;
 
