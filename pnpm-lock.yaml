@@ -14,6 +14,9 @@ importers:
         specifier: ^4.28.1
         version: 4.29.1
     devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.23
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -34,7 +37,7 @@ importers:
         version: 8.16.3
     devDependencies:
       '@types/node':
-        specifier: ^20.11.30
+        specifier: ^20.19.23
         version: 20.19.23
       '@types/pg':
         specifier: ^8.15.5
@@ -51,18 +54,21 @@ importers:
       '@caas/shared-metrics':
         specifier: workspace:*
         version: link:../../packages/shared-metrics
-      ethers:
-        specifier: ^6.15.0
-        version: 6.15.0
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
       pg:
-        specifier: ^8.16.0
+        specifier: ^8.16.3
         version: 8.16.3
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.23
+        version: 20.19.23
+      '@types/pg':
+        specifier: ^8.15.5
+        version: 8.15.5
       typescript:
-        specifier: ^5.6.3
+        specifier: ^5.9.3
         version: 5.9.3
 
   services/event-ingestor:
@@ -77,9 +83,15 @@ importers:
         specifier: ^2.2.4
         version: 2.2.4
       pg:
-        specifier: ^8.16.0
+        specifier: ^8.16.3
         version: 8.16.3
     devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.23
+      '@types/pg':
+        specifier: ^8.10.2
+        version: 8.15.5
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -89,18 +101,21 @@ importers:
       '@caas/shared-metrics':
         specifier: workspace:*
         version: link:../../packages/shared-metrics
-      ethers:
-        specifier: ^6.15.0
-        version: 6.15.0
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
       pg:
-        specifier: ^8.16.0
+        specifier: ^8.16.3
         version: 8.16.3
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.23
+        version: 20.19.23
+      '@types/pg':
+        specifier: ^8.15.5
+        version: 8.15.5
       typescript:
-        specifier: ^5.6.3
+        specifier: ^5.9.3
         version: 5.9.3
 
 packages:
